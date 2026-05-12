@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Калькулятор сна</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #121212;
+    color: #e0e0e0;
+}
+h1 {
+    text-align: center;
+    color: #90caf9;
+}
+.slider-container, .input-container {
+    margin: 15px 0;
+    padding: 12px;
+    background: #1e1e1e;
+    border-radius: 10px;
+}
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+input[type=range], input[type=number] {
+    width: 100%;
+    background: #424242;
+    color: #fff;
+}
+input[type=range]::-webkit-slider-thumb {
+    background: #90caf9;
+}
+button {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background-color: #90caf9;
+    color: #121212;
+    border: none;
+    border-radius: 10px;
+    font-size: 18px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+button:hover { background-color: #64b5f6; }
+#result {
+    text-align: center;
+    font-size: 48px;
+    margin-top: 20px;
+}
+#rating {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+#summary {
+    background: #1e1e1e;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+.summary-section {
+    margin-bottom: 10px;
+}
+.summary-section h3 {
+    margin-bottom: 5px;
+    color: #90caf9;
+}
+.summary-section ul {
+    margin: 0;
+    padding-left: 20px;
+}
+</style>
+</head>
+<body>
+
+<h1>🛌 Калькулятор сна</h1>
+
+<div class="slider-container">
+    <label>Часы сна: <span id="sleepVal">7</span></label>
+    <input type="range" id="sleep" min="0" max="12" value="7" oninput="updateVal('sleep')">
+</div>
+
+<div class="slider-container">
+    <label>Пробуждения: <span id="wakeupsVal">1</span></label>
+    <input type="range" id="wakeups" min="0" max="10" value="1" oninput="updateVal('wakeups')">
+</div>
+
+<div class="slider-container">
+    <label>Качество сна (1-5): <span id="sleepQVal">3</span></label>
+    <input type="range" id="sleepQ" min="1" max="5" value="3" oninput="updateVal('sleepQ')">
+</div>
+
+<div class="input-container">
+    <label>Физическая активность (минут):</label>
+    <input type="number" id="activity" value="30" min="0" max="180" oninput="updateVal('activity')">
+</div>
+
+<div class="slider-container">
+    <label>Качество питания (1-5): <span id="foodVal">3</span></label>
+    <input type="range" id="food" min="1" max="5" value="3" oninput="updateVal('food')">
+</div>
+
+<div class="input-container">
+    <label>Вода (литры):</label>
+    <input type="number" id="water" value="2" min="0" max="4" step="0.1" oninput="updateVal('water')">
+</div>
+
+<div class="input-container">
+    <label>Время на улице (часы):</label>
+    <input type="number" id="outdoor" value="1.5" min="0" max="24" step="0.1" oninput="updateVal('outdoor')">
+</div>
+
+<button onclick="calculate()">Рассчитать</button>
+
+<div id="result"></div>
+<div id="rating"></div>
+<div id="summary"></div>
+
+<script>
+function updateVal(id){
+    let val = document.getElementById(id).value;
+    let span = document.getElementById(id+'Val');
+    if(span) span.innerText = val;
+}
+
+function calculate(){
+    let sleep = parseFloat(document.getElementById('sleep').value);
+    let wakeups = parseFloat(document.getElementById('wakeups').value);
+    let sleepQ = parseFloat(document.getElementById('sleepQ').value);
+    let activity = parseFloat(document.getElementById('activity').value);
+    let food = parseFloat(document.getElementById('food').value);
+    let water = parseFloat(document.getElementById('water').value);
+    let outdoor = parseFloat(document.getElementById('outdoor').value);
+
+    // ===== Основные баллы =====
+    let sleep_score = 100;
+    if(sleep < 7) sleep_score -= (7 - sleep) * 10;
+    else if(sleep > 9) sleep_score -= (sleep - 9) * 3;
+    sleep_score -= wakeups * 3;
+    sleep_score += (sleepQ - 3) * 10;
+    sleep_score = Math.max(0, Math.min(100, sleep_score));
+
+    let activity_score = 100;
+    if(activity < 30) activity_score -= (30 - activity) * 1.5;
+    activity_score = Math.max(0, activity_score);
+
+    let food_score = (food / 5) * 100;
+
+    let hydration_score = 100;
+    if(water < 1.5) hydration_score -= (1.5 - water) * 12;
+    if(outdoor < 1) hydration_score -= (1 - outdoor) * 15;
+    hydration_score = Math.max(0, hydration_score);
+
+    let IIP = Math.round(sleep_score*0.35 + activity_score*0.25 + food_score*0.2 + hydration_score*0.2);
+
+    // ===== Рейтинг =====
+    let rating = "";
+    let color = "";
+    if(IIP >= 80){ rating = "🟢 Отличный день"; color="green"; }
+    else if(IIP >= 60){ rating = "🟢 Хороший день"; color="limegreen"; }
+    else if(IIP >= 40){ rating = "🟡 Средний день"; color="gold"; }
+    else if(IIP >= 20){ rating = "🟠 Плохой день"; color="orange"; }
+    else{ rating = "🔴 Очень плохой день"; color="red"; }
+
+    document.getElementById('result').innerHTML = `<span style="color:${color}; font-weight:bold;">${IIP}</span>`;
+    document.getElementById('rating').innerHTML = `<span style="color:${color}; font-weight:bold;">${rating}</span>`;
+
+    // ===== Расширенная сводка =====
+    let summaryHTML = '';
+
+    summaryHTML += `<div class="summary-section"><h3>Рекомендации:</h3><ul>`;
+    if(sleep < 7) summaryHTML += "<li>Спите 7-9 часов</li>";
+    if(wakeups > 2) summaryHTML += "<li>Сократите количество пробуждений</li>";
+    if(sleepQ < 3) summaryHTML += "<li>Улучшите качество сна (темнота, температура, расслабление)</li>";
+    if(activity < 30) summaryHTML += "<li>Добавьте минимум 30 минут физической активности</li>";
+    if(food <= 2) summaryHTML += "<li>Сбалансируйте питание: больше белка и овощей</li>";
+    if(water < 1.5) summaryHTML += "<li>Пейте больше воды</li>";
+    if(outdoor < 1) summaryHTML += "<li>Проводите больше времени на улице</li>";
+    if(IIP >= 80) summaryHTML += "<li>Поддерживайте текущий режим</li>";
+    summaryHTML += "</ul></div>";
+
+    summaryHTML += `<div class="summary-section"><h3>Баллы по компонентам:</h3><ul>
+<li>Сон: ${sleep_score}</li>
+<li>Активность: ${activity_score}</li>
+<li>Питание: ${food_score}</li>
+<li>Гидратация и улица: ${hydration_score}</li>
+</ul></div>`;
+
+    document.getElementById('summary').innerHTML = summaryHTML;
+}
+</script>
+
+</body>
+</html>
